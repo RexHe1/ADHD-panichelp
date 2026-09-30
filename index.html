@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F3F1EC">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E2227">
+<title>安心急救</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#F3F1EC;
+    --surface:#FFFFFF;
+    --text:#3A3A38;
+    --muted:#8A8A83;
+    --primary:#8FA998;
+    --primary-text:#2E3B33;
+    --circle:#AEC6CF;
+    --circle-2:#C9DDE2;
+    --danger:#D98B7A;
+    --danger-text:#4A2A22;
+    --border:#E4E0D8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1E2227;
+      --surface:#282D33;
+      --text:#EDEBE6;
+      --muted:#9AA0A6;
+      --primary:#7C9A87;
+      --primary-text:#0F1512;
+      --circle:#5E7C87;
+      --circle-2:#3F5760;
+      --danger:#C97B6C;
+      --danger-text:#241110;
+      --border:#3A3F45;
+    }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    overscroll-behavior:none;
+  }
+  .view{
+    display:none;
+    min-height:100vh;
+    min-height:100dvh;
+    padding:20px;
+    padding-bottom:calc(20px + env(safe-area-inset-bottom));
+    flex-direction:column;
+  }
+  .view.active{ display:flex; }
+
+  /* ---------- 通用按钮 ---------- */
+  button, .btn{
+    font-family:inherit;
+    border:none;
+    cursor:pointer;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  .btn-primary{
+    background:var(--primary);
+    color:var(--primary-text);
+    border-radius:24px;
+    font-size:1.15rem;
+    font-weight:600;
+    padding:18px 24px;
+    min-height:56px;
+    transition:transform .15s ease, opacity .15s ease;
+  }
+  .btn-primary:active{ transform:scale(0.97); opacity:.9; }
+  .btn-secondary{
+    background:var(--surface);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:20px;
+    font-size:1rem;
+    padding:14px 20px;
+    min-height:48px;
+  }
+  .btn-secondary:active{ opacity:.85; }
+  .btn-text{
+    background:none;
+    color:var(--muted);
+    font-size:1rem;
+    padding:10px;
+    min-height:44px;
+    min-width:44px;
+  }
+  .icon-btn{
+    background:none;
+    color:var(--muted);
+    font-size:1.5rem;
+    padding:8px;
+    min-width:44px;
+    min-height:44px;
+    line-height:1;
+  }
+
+  /* ---------- 首页 ---------- */
+  #view-home{ justify-content:space-between; }
+  .home-top{ display:flex; justify-content:flex-end; }
+  .home-center{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #btn-help{
+    width:min(70vw, 280px);
+    height:min(70vw, 280px);
+    border-radius:50%;
+    background:var(--primary);
+    color:var(--primary-text);
+    font-size:clamp(1.3rem, 6vw, 1.7rem);
+    font-weight:700;
+    line-height:1.4;
+    box-shadow:0 8px 24px rgba(0,0,0,0.08);
+  }
+  #btn-help:active{ transform:scale(0.96); }
+  .home-bottom{ display:flex; flex-direction:column; align-items:center; gap:12px; }
+
+  /* ---------- 紧急呼叫按钮 ---------- */
+  .emergency-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    max-width:360px;
+    background:var(--danger);
+    color:var(--danger-text);
+    border-radius:20px;
+    font-size:1.05rem;
+    font-weight:600;
+    padding:16px;
+    min-height:52px;
+    text-decoration:none;
+  }
+  .emergency-btn[hidden]{ display:none; }
+
+  /* ---------- 呼吸页 ---------- */
+  #view-breathing{ align-items:center; }
+  .top-bar{
+    width:100%;
+    display:flex;
+    justify-content:flex-start;
+  }
+  .breathing-stage{
+    flex:1;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:28px;
+  }
+  .circle-wrap{
+    width:min(60vw, 260px);
+    height:min(60vw, 260px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #circle{
+    width:60%;
+    height:60%;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--circle-2), var(--circle));
+    transform:scale(1);
+    transition:transform 4s ease-in-out;
+  }
+  #breath-text{
+    font-size:clamp(1.4rem, 6vw, 2rem);
+    font-weight:600;
+    color:var(--text);
+    min-height:2.4em;
+  }
+  #phrase-text{
+    font-size:1.05rem;
+    color:var(--muted);
+    text-align:center;
+    max-width:320px;
+    min-height:3em;
+    opacity:1;
+    transition:opacity .6s ease;
+    padding:0 8px;
+  }
+  #phrase-text.fade{ opacity:0; }
+  .breathing-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    width:100%;
+  }
+
+  /* ---------- 着陆练习 ---------- */
+  #view-grounding{ align-items:center; }
+  .grounding-stage{
+    flex:1;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:24px;
+    text-align:center;
+  }
+  .dots{ display:flex; gap:10px; }
+  .dot{
+    width:10px; height:10px; border-radius:50%;
+    background:var(--border);
+    transition:background .3s ease, transform .3s ease;
+  }
+  .dot.active{ background:var(--primary); transform:scale(1.3); }
+  .grounding-count{
+    font-size:3rem;
+    font-weight:700;
+    color:var(--primary);
+  }
+  .grounding-label{
+    font-size:1.3rem;
+    font-weight:500;
+    max-width:320px;
+    line-height:1.5;
+  }
+
+  /* ---------- 设置页 ---------- */
+  #view-settings{ align-items:stretch; }
+  .settings-header{ display:flex; align-items:center; gap:8px; }
+  .settings-title{ font-size:1.2rem; font-weight:700; }
+  .settings-section{ margin-top:28px; }
+  .settings-section h2{
+    font-size:0.95rem;
+    color:var(--muted);
+    font-weight:600;
+    margin:0 0 12px;
+  }
+  .phrase-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .phrase-row span{ flex:1; font-size:0.98rem; }
+  .phrase-row button{
+    background:none; color:var(--muted); font-size:1.2rem;
+    min-width:36px; min-height:36px;
+  }
+  .add-row{ display:flex; gap:8px; margin-top:6px; }
+  .add-row input{ flex:1; }
+  input[type="text"], input[type="tel"]{
+    font-family:inherit;
+    font-size:1rem;
+    padding:14px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    width:100%;
+  }
+  input:focus{ outline:2px solid var(--primary); }
+  .contact-row{ display:flex; flex-direction:column; gap:10px; }
+  .save-hint{
+    font-size:0.85rem; color:var(--primary);
+    min-height:1.2em;
+    opacity:0; transition:opacity .3s ease;
+  }
+  .save-hint.show{ opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div class="view active" id="view-home">
+  <div class="home-top">
+    <button class="icon-btn" data-nav="settings" aria-label="设置">⚙</button>
+  </div>
+  <div class="home-center">
+    <button id="btn-help" data-nav="breathing">我需要<br>帮助</button>
+  </div>
+  <div class="home-bottom">
+    <a class="emergency-btn emergency-call" id="emergency-home" href="tel:" hidden>📞 紧急联系人</a>
+  </div>
+</div>
+
+<!-- 呼吸引导 -->
+<div class="view" id="view-breathing">
+  <div class="top-bar">
+    <button class="btn-text" data-nav="home">← 返回</button>
+  </div>
+  <div class="breathing-stage">
+    <div class="circle-wrap"><div id="circle"></div></div>
+    <div id="breath-text">吸气</div>
+    <div id="phrase-text"></div>
+  </div>
+  <div class="breathing-actions">
+    <button class="btn-secondary" data-nav="grounding">试试 5-4-3-2-1 着陆练习</button>
+    <a class="emergency-btn emergency-call" id="emergency-breathing" href="tel:" hidden>📞 紧急联系人</a>
+  </div>
+</div>
+
+<!-- 5-4-3-2-1 着陆练习 -->
+<div class="view" id="view-grounding">
+  <div class="top-bar">
+    <button class="btn-text" data-nav="home">← 返回</button>
+  </div>
+  <div class="grounding-stage">
+    <div class="dots" id="grounding-dots"></div>
+    <div class="grounding-count" id="grounding-count">5</div>
+    <div class="grounding-label" id="grounding-label"></div>
+  </div>
+  <div class="breathing-actions">
+    <button class="btn-primary" id="btn-grounding-next">下一步</button>
+  </div>
+</div>
+
+<!-- 设置 -->
+<div class="view" id="view-settings">
+  <div class="settings-header">
+    <button class="btn-text" data-nav="home">← 返回</button>
+    <div class="settings-title">设置</div>
+  </div>
+
+  <div class="settings-section">
+    <h2>安慰语句</h2>
+    <div id="phrase-list"></div>
+    <div class="add-row">
+      <input type="text" id="new-phrase" placeholder="写一句想对自己说的话">
+      <button class="btn-secondary" id="btn-add-phrase">添加</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h2>紧急联系人电话</h2>
+    <div class="contact-row">
+      <input type="tel" id="contact-input" placeholder="例如 138xxxxxxxx">
+      <button class="btn-secondary" id="btn-save-contact">保存</button>
+      <div class="save-hint" id="save-hint">已保存</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "panicReliefData";
+  var DEFAULT_PHRASES = [
+    "这种感觉很难受，但它会过去。",
+    "你现在是安全的。",
+    "只需要呼吸，不用想别的。",
+    "这是身体的警报，不是真正的危险。",
+    "你已经挺过很多次了，这次也可以。"
+  ];
+
+  var data = loadData();
+
+  function loadData(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(!Array.isArray(parsed.phrases) || parsed.phrases.length === 0){
+          parsed.phrases = DEFAULT_PHRASES.slice();
+        }
+        if(typeof parsed.contact !== "string") parsed.contact = "";
+        return parsed;
+      }
+    }catch(e){}
+    return { phrases: DEFAULT_PHRASES.slice(), contact: "" };
+  }
+
+  function saveData(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }catch(e){}
+  }
+
+  /* ---------- 视图切换 ---------- */
+  var views = {
+    home: document.getElementById("view-home"),
+    breathing: document.getElementById("view-breathing"),
+    grounding: document.getElementById("view-grounding"),
+    settings: document.getElementById("view-settings")
+  };
+
+  function showView(name){
+    stopBreathing();
+    Object.keys(views).forEach(function(k){
+      views[k].classList.toggle("active", k === name);
+    });
+    if(name === "breathing") startBreathing();
+    if(name === "grounding") startGrounding();
+    if(name === "settings") renderSettings();
+  }
+
+  document.querySelectorAll("[data-nav]").forEach(function(el){
+    el.addEventListener("click", function(){
+      showView(el.getAttribute("data-nav"));
+    });
+  });
+
+  /* ---------- 紧急呼叫按钮 ---------- */
+  function updateEmergencyButtons(){
+    var has = data.contact && data.contact.trim().length > 0;
+    document.querySelectorAll(".emergency-call").forEach(function(a){
+      if(has){
+        a.href = "tel:" + data.contact.trim();
+        a.hidden = false;
+      }else{
+        a.hidden = true;
+      }
+    });
+  }
+
+  /* ---------- 呼吸引导 ---------- */
+  var circle = document.getElementById("circle");
+  var breathText = document.getElementById("breath-text");
+  var phraseText = document.getElementById("phrase-text");
+  var breathTimers = [];
+  var phraseTimer = null;
+  var phraseIndex = 0;
+
+  function clearBreathTimers(){
+    breathTimers.forEach(function(t){ clearTimeout(t); });
+    breathTimers = [];
+  }
+
+  function inhalePhase(){
+    circle.style.transitionDuration = "4s";
+    circle.style.transform = "scale(1.45)";
+    breathText.textContent = "吸气";
+    breathTimers.push(setTimeout(exhalePhase, 4000));
+  }
+  function exhalePhase(){
+    circle.style.transitionDuration = "6s";
+    circle.style.transform = "scale(1)";
+    breathText.textContent = "呼气";
+    breathTimers.push(setTimeout(inhalePhase, 6000));
+  }
+
+  function showNextPhrase(){
+    if(!data.phrases || data.phrases.length === 0) return;
+    phraseText.classList.add("fade");
+    setTimeout(function(){
+      phraseText.textContent = data.phrases[phraseIndex % data.phrases.length];
+      phraseIndex++;
+      phraseText.classList.remove("fade");
+    }, 600);
+  }
+
+  function startBreathing(){
+    clearBreathTimers();
+    circle.style.transitionDuration = "0s";
+    circle.style.transform = "scale(1)";
+    // 强制回到初始状态后再开始动画
+    void circle.offsetWidth;
+    inhalePhase();
+
+    phraseIndex = 0;
+    phraseText.classList.remove("fade");
+    phraseText.textContent = data.phrases[0] || "";
+    if(phraseTimer) clearInterval(phraseTimer);
+    phraseTimer = setInterval(showNextPhrase, 20000);
+  }
+
+  function stopBreathing(){
+    clearBreathTimers();
+    if(phraseTimer){ clearInterval(phraseTimer); phraseTimer = null; }
+  }
+
+  /* ---------- 5-4-3-2-1 着陆练习 ---------- */
+  var GROUNDING_STEPS = [
+    { count: 5, label: "说出 5 样你现在能看到的东西" },
+    { count: 4, label: "找到 4 样你能触摸到的东西" },
+    { count: 3, label: "留意 3 种你能听到的声音" },
+    { count: 2, label: "留意 2 种你能闻到的气味" },
+    { count: 1, label: "留意 1 种你能尝到的味道" }
+  ];
+  var groundingIndex = 0;
+  var groundingCountEl = document.getElementById("grounding-count");
+  var groundingLabelEl = document.getElementById("grounding-label");
+  var groundingDotsEl = document.getElementById("grounding-dots");
+  var btnGroundingNext = document.getElementById("btn-grounding-next");
+
+  function renderGroundingDots(){
+    groundingDotsEl.innerHTML = "";
+    GROUNDING_STEPS.forEach(function(_, i){
+      var d = document.createElement("div");
+      d.className = "dot" + (i === groundingIndex ? " active" : "");
+      groundingDotsEl.appendChild(d);
+    });
+  }
+
+  function renderGroundingStep(){
+    var step = GROUNDING_STEPS[groundingIndex];
+    groundingCountEl.textContent = step.count;
+    groundingLabelEl.textContent = step.label;
+    renderGroundingDots();
+    btnGroundingNext.textContent = (groundingIndex === GROUNDING_STEPS.length - 1) ? "完成" : "下一步";
+  }
+
+  function startGrounding(){
+    groundingIndex = 0;
+    renderGroundingStep();
+  }
+
+  btnGroundingNext.addEventListener("click", function(){
+    if(groundingIndex === GROUNDING_STEPS.length - 1){
+      showView("home");
+    }else{
+      groundingIndex++;
+      renderGroundingStep();
+    }
+  });
+
+  /* ---------- 设置页 ---------- */
+  var phraseListEl = document.getElementById("phrase-list");
+  var newPhraseInput = document.getElementById("new-phrase");
+  var btnAddPhrase = document.getElementById("btn-add-phrase");
+  var contactInput = document.getElementById("contact-input");
+  var btnSaveContact = document.getElementById("btn-save-contact");
+  var saveHint = document.getElementById("save-hint");
+
+  function renderSettings(){
+    contactInput.value = data.contact || "";
+    renderPhraseList();
+  }
+
+  function renderPhraseList(){
+    phraseListEl.innerHTML = "";
+    data.phrases.forEach(function(p, i){
+      var row = document.createElement("div");
+      row.className = "phrase-row";
+
+      var span = document.createElement("span");
+      span.textContent = p;
+
+      var del = document.createElement("button");
+      del.textContent = "×";
+      del.setAttribute("aria-label", "删除");
+      del.addEventListener("click", function(){
+        data.phrases.splice(i, 1);
+        if(data.phrases.length === 0){
+          data.phrases = DEFAULT_PHRASES.slice();
+        }
+        saveData();
+        renderPhraseList();
+      });
+
+      row.appendChild(span);
+      row.appendChild(del);
+      phraseListEl.appendChild(row);
+    });
+  }
+
+  btnAddPhrase.addEventListener("click", function(){
+    var val = newPhraseInput.value.trim();
+    if(val.length === 0) return;
+    data.phrases.push(val);
+    saveData();
+    newPhraseInput.value = "";
+    renderPhraseList();
+  });
+
+  newPhraseInput.addEventListener("keydown", function(e){
+    if(e.key === "Enter") btnAddPhrase.click();
+  });
+
+  btnSaveContact.addEventListener("click", function(){
+    data.contact = contactInput.value.trim();
+    saveData();
+    updateEmergencyButtons();
+    saveHint.classList.add("show");
+    setTimeout(function(){ saveHint.classList.remove("show"); }, 1500);
+  });
+
+  /* ---------- 初始化 ---------- */
+  updateEmergencyButtons();
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
